@@ -1,0 +1,45 @@
+import numpy as np
+import pandas as pd
+from sklearn.feature_extraction.text import TfidfVectorizer
+import difflib
+from sklearn.metrics.pairwise import cosine_similarity
+df=pd.read_csv("/content/movies.csv", engine='python')
+df.head()
+df.shape
+features_preferred=['genres','keywords','overview','popularity','tagline','title','vote_average','cast','director']
+for i in features_preferred:
+  df[i]=df[i].fillna(" ")
+combined_features=df['genres']+' '+df['keywords']+' '+df['overview']+' '+str(df['popularity'])+' '+df['tagline']+' '+df['title']+' '+str(df['vote_average'])+' '+df['cast']+' '+df['director']
+vectorizer = TfidfVectorizer(min_df=1, stop_words='english', lowercase=True)
+combined_vectors = vectorizer.fit_transform(combined_features)
+print(combined_vectors.shape)
+print(combined_vectors)
+print("Enter your top 5 favourite movies")
+pref=[]
+for i in range(5):
+  c=input(f"Enter the {i+1} best movie preference")
+  pref.append(c)
+similarity_scores=cosine_similarity(combined_vectors)
+print(similarity_scores)
+similarity_scores.shape
+titles=df['title'].tolist()
+print(titles[:5])
+closest_match =[]
+for i in pref:
+      close_match=difflib.get_close_matches(i,titles)
+      closest_match.extend(close_match)
+print(closest_match)
+indexes=df[df.title.isin(closest_match)]['index'].values
+similarity=list(enumerate(similarity_scores[indexes]))
+sum_similarity_scores = similarity_scores[indexes].sum(axis=0)
+sorted_recommendations_with_scores = sorted(list(enumerate(sum_similarity_scores)), key=lambda x: x[1], reverse=True)
+preferred_movie_original_indices = indexes.tolist()
+final_recommendations = []
+for movie_idx, score in sorted_recommendations_with_scores:
+    if movie_idx not in preferred_movie_original_indices:
+        final_recommendations.append((movie_idx, score))
+top_recommendations = final_recommendations[:10] 
+print("The most preferred movies as per your interests are as follows:")
+for movie_idx, score in top_recommendations:
+  title = df.loc[movie_idx, 'title']
+  print(f"- {title} (Similarity Score: {score:.2f})")
