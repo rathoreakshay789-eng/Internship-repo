@@ -1,1 +1,50 @@
-
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.svm import SVC
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import accuracy_score,confusion_matrix,classification_report
+df=pd.read_csv("/content/WA_Fn-UseC_-Telco-Customer-Churn.csv")
+df.head()
+features=["gender","Partner","Dependents","PhoneService","MultipleLines","InternetService","OnlineSecurity","OnlineBackup","DeviceProtection","TechSupport","StreamingTV","StreamingMovies","Contract","PaperlessBilling","PaymentMethod","Churn"]
+print(len(features))
+print(df["InternetService"].unique())
+print(df["Contract"].unique())
+print(df["PaymentMethod"].unique())
+print(df["MultipleLines"].unique())
+for i in features:
+  if i=="gender":
+    df["gender"]=df["gender"].map({"Male":1,"Female":0}).fillna(-1).astype(int)
+  elif i=="MultipleLines":
+    df["MultipleLines"]=df["MultipleLines"].map({"No phone service":0,"Yes":1,"No":2}).fillna(-1).astype(int)
+  elif i=="InternetService":
+    df["InternetService"]=df["InternetService"].map({"DSL":0,"Fiber optic":1,"No":2}).fillna(-1).astype(int)
+  elif i=="Contract":
+    df["Contract"]=df["Contract"].map({"Month-to-month":0,"Two year":1,"One year":2}).fillna(-1).astype(int)
+  elif i=="PaymentMethod":
+    df["PaymentMethod"]=df["PaymentMethod"].map({"Electronic check":0,"Mailed check":1,"Bank transfer (automatic)":2,"Credit card (automatic)":3}).fillna(-1).astype(int)
+  else:
+    df[i]=df[i].map({"Yes":1,"No":0}).fillna(-1).astype(int)
+X=df.iloc[:,2:-1]
+Y=df["Churn"]
+print(X.shape)
+print(Y.shape)
+scaler=StandardScaler()
+X['TotalCharges'] = pd.to_numeric(X['TotalCharges'], errors='coerce')
+X['TotalCharges'].fillna(0, inplace=True)
+X=scaler.fit_transform(X)
+scaler=StandardScaler()
+X['TotalCharges'] = pd.to_numeric(X['TotalCharges'], errors='coerce')
+X['TotalCharges'].fillna(0, inplace=True)
+X=scaler.fit_transform(X)
+x_train,x_test,y_train,y_test=train_test_split(X,Y,random_state=42,test_size=0.2)
+print("X_train",x_train.shape)
+print('X_test',x_test.shape)
+print("Y_train",y_train.shape)
+print("Y_test",y_test.shape)
+model=SVC()
+model.fit(x_train,y_train)
+y_pred=model.predict(x_test)
+print(accuracy_score(y_test,y_pred))
+print(classification_report(y_test,y_pred))
+print(confusion_matrix(y_test,y_pred))
