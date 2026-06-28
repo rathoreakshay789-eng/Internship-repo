@@ -1,0 +1,75 @@
+import numpy as np
+import pandas as pd
+import torch.nn as nn
+import torch
+import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+import torch.optim as optim
+from sklearn.metrics import accuracy_score,confusion_matrix,classification_report
+import matplotlib.pyplot as plt
+class Breast_Cancer(nn.Module):
+
+  def __init__(self):
+    super().__init__()
+    self.l1=nn.Linear(in_features=30,out_features=16)
+    self.l2=nn.Linear(in_features=16,out_features=1)
+  def clipped_relu(self,x):
+    return torch.clamp(x,min=0,max=1)
+  def forward(self,x):
+    x=self.l1(x)
+    x=self.clipped_relu(x)
+    x=self.l2(x)
+    return x
+df=pd.read_csv("/content/data.csv")
+df.head()
+df.shape
+print(df["diagnosis"].unique())
+df["diagnosis"]=df["diagnosis"].map({"M":1,"B":0})
+X=df.iloc[:,2:-1]
+Y=df["diagnosis"]
+print(X.shape)
+print(Y.shape)
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print(f"Using device: {device}")
+x_train,x_test,y_train,y_test=train_test_split(X,Y,random_state=42,test_size=0.2)
+scaler=StandardScaler()
+x_train=scaler.fit_transform(x_train)
+x_test=scaler.transform(x_test)
+x_train_tensor = torch.tensor(x_train, dtype=torch.float32).to(device)
+y_train_tensor = torch.tensor(y_train.values, dtype=torch.float32).view(-1, 1).to(device)
+x_test_tensor = torch.tensor(x_test, dtype=torch.float32).to(device)
+y_test_tensor = torch.tensor(y_test.values, dtype=torch.float32).view(-1, 1).to(device)
+model=Breast_Cancer().to(device)
+optimiser=optim.AdamW(model.parameters(),lr=0.001)
+epochs=100
+criterion=nn.BCEWithLogitsLoss()
+loss_list=[]
+for i in range(epochs):
+  model.train()
+  y_predict=model(x_train_tensor)
+  loss=criterion(y_predict,y_train_tensor)
+  loss_list.append(loss.item())
+  optimiser.zero_grad()
+  loss.backward()
+  optimiser.step()
+  if i%10==0:
+    print(f"Epoch No : {i}, loss:{loss.item()}")
+
+model.eval()
+with torch.no_grad():
+    y_testpredict_logits = model(x_test_tensor)
+    y_testpredict = torch.sigmoid(y_testpredict_logits).round()
+y_test_np = y_test_tensor.cpu().numpy()
+y_testpredict_np = y_testpredict.cpu().numpy()
+
+print("Accuracy:", accuracy_score(y_test_np, y_testpredict_np))
+print("Confusion Matrix:\n", confusion_matrix(y_test_np, y_testpredict_np))
+print("Classification Report:\n", classification_report(y_test_np, y_testpredict_np))
+plt.figure(figsize=(10, 6))
+plt.plot(range(epochs), loss_list, label='Training Loss')
+plt.xlabel('Epochs')
+plt.ylabel('Loss')
+plt.title('Training Loss Over Epochs')
+plt.legend()
+plt.grid(True)
