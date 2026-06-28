@@ -25,7 +25,7 @@ for i in features:
     df["PaymentMethod"]=df["PaymentMethod"].map({"Electronic check":0,"Mailed check":1,"Bank transfer (automatic)":2,"Credit card (automatic)":3}).fillna(-1).astype(int)
   else:
     df[i]=df[i].map({"Yes":1,"No":0}).fillna(-1).astype(int)
-X=df.iloc[:,2:-1]
+X=df.iloc[:,1:-1]
 Y=df["Churn"]
 print(X.shape)
 print(Y.shape)
