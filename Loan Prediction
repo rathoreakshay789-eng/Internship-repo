@@ -1,1 +1,44 @@
+import numpy as np
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.svm import SVC
+from sklearn.metrics import accuracy_score,confusion_matrix,classification_report
+from sklearn.preprocessing import StandardScaler
+df=pd.read_csv("/content/loan.csv")
+df.head()
+df.shape
+
+df["Dependents"] = df["Dependents"].astype(str).str.strip().map({"0":0, "1":1, "2":2, "3+":3}).fillna(-1).astype(int)
+numeric_cols_to_convert = ['ApplicantIncome', 'CoapplicantIncome', 'LoanAmount', 'Loan_Amount_Term', 'Credit_History']
+for col in numeric_cols_to_convert:
+    df[col] = pd.to_numeric(df[col], errors='coerce').fillna(-1)
+df["Gender"] = df["Gender"].astype(str).str.strip().str.lower().map({"male":1,"female":0}).fillna(-1).astype(int)
+df["Married"] = df["Married"].astype(str).str.strip().str.lower().map({"yes":1,"no":0}).fillna(-1).astype(int)
+df["Education"] = df["Education"].astype(str).str.strip().str.lower().map({"graduate":1,"not graduate":0}).fillna(-1).astype(int)
+df["Self_Employed"] = df["Self_Employed"].astype(str).str.strip().str.lower().map({"yes":1,"no":0}).fillna(-1).astype(int)
+df["Property_Area"] = df["Property_Area"].astype(str).str.strip().str.lower().map({"urban":2,"semiurban":1,"rural":0}).fillna(-1).astype(int)
+df["Loan_Status"] = df["Loan_Status"].astype(str).str.strip().str.lower().map({"y":1,"n":0}).fillna(-1).astype(int)
+X=df.iloc[:,2:-1]
+Y=df["Loan_Status"]
+X_train,X_test,Y_train,Y_test=train_test_split(X,Y,test_size=0.2,random_state=42)
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
+
+print("X_train_scaled shape:", X_train_scaled.shape)
+print("X_test_scaled shape:", X_test_scaled.shape)
+print(X_train.shape)
+print(X_test.shape)
+print(Y_train.shape)
+print(Y_test.shape)
+model=SVC()
+model.fit(X_train,Y_train)
+model_scaled = SVC(random_state=42)
+model_scaled.fit(X_train_scaled, Y_train)
+
+Y_pred_scaled = model_scaled.predict(X_test_scaled)
+
+print("Accuracy Score (Scaled Data):", accuracy_score(Y_test, Y_pred_scaled))
+print("\nConfusion Matrix (Scaled Data):\n", confusion_matrix(Y_test, Y_pred_scaled))
+print("\nClassification Report (Scaled Data):\n", classification_report(Y_test, Y_pred_scaled))
 
